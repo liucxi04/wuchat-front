@@ -1,27 +1,20 @@
 <template>
   <ul class="message-item">
     <li
-      v-for="(item, index) in content"
-      :key="index"
-      @click="switchGroup(index, item.id)"
+      v-for="(item, index) in content" :key="index" @click="switchGroup(index, item.id)"
       :class="['message-list', {'message-active': item.active}]">
 
       <div class="message-left">
-        <el-badge
-          class="item"
-          :max="99"
-          :value="item.message.newMessageCount"
-          :hidden="item.message.isNewMessage ? !item.message.isNewMessage : true">
+        <el-badge class="item" :max="99"
+          :value="item.message.newMessageCount" :hidden="!item.message.isNewMessage">
           <img class="message-avatar" :src="item.avatar">
         </el-badge>
       </div>
 
       <div class="message-right">
         <div class="message-header">
-          <div class="message-title">{{item.nickName}}</div>
-          <div class="message-time">{{item.message.time | formatTime}}</div>
+          <div class="message-title">{{item.name}}</div>
         </div>
-        <div class="message-content" v-html="item.message.content"></div>
       </div>
     </li>
   </ul>
@@ -31,11 +24,9 @@
 import { gotoBottom } from '@/assets/tools'
 
 export default {
-  name: 'Message',
+  name: 'MessageGroup',
   props: {
-    content: {
-      type: Array
-    }
+    content: { type: Array }
   },
   data () {
     return {
@@ -58,23 +49,6 @@ export default {
       this.$forceUpdate()
       // 传递给父级
       this.$emit('switchGroup', index, id)
-    }
-  },
-  /**
-   * time:mins
-   */
-  filters: {
-    formatTime (time) {
-      let date = new Date(time)
-      let hours = date.getHours()
-      let minutes = date.getMinutes()
-      if (hours < 10) {
-        hours = `0${hours}`
-      }
-      if (minutes < 10) {
-        minutes = `0${minutes}`
-      }
-      return `${hours}:${minutes}`
     }
   }
 }

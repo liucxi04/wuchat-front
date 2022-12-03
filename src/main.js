@@ -6,18 +6,18 @@ import router from './router'
 import websocket from './assets/websocket'
 import 'element-ui/lib/theme-chalk/index.css'
 import {
-    Button,
-    Input,
-    Icon,
-    Badge,
-    Dialog,
-    Aside,
-    Main,
-    Header,
-    Container,
-    Upload,
-    MessageBox,
-    Notification
+  Button,
+  Input,
+  Icon,
+  Badge,
+  Dialog,
+  Aside,
+  Main,
+  Header,
+  Container,
+  Upload,
+  MessageBox,
+  Notification
 } from 'element-ui'
 
 Vue.use(Icon)
@@ -38,8 +38,8 @@ Vue.prototype.$websocket = websocket
 
 /* eslint-disable no-new */
 new Vue({
-    el: '#app',
-    router,
-    components: { App },
-    template: '<App/>'
+  el: '#app',
+  router,
+  components: { App },
+  template: '<App/>'
 })

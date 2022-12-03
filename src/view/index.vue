@@ -6,8 +6,8 @@
 
     <div class="avatar-box">
       <el-input
-        placeholder="Your nickName"
-        v-model="nickName"
+        placeholder="Your name"
+        v-model="name"
         maxlength="8">
       </el-input>
       <img :src="avatar || './static/avatar/avatar_01.jpg'" @click="nextAvatar">
@@ -27,7 +27,7 @@ export default {
   data () {
     return {
       avatar: null,
-      nickName: '',
+      name: '',
       random: 0,
       dialogVisible: true,
       closeWindow: close
@@ -52,17 +52,18 @@ export default {
       this.avatar = avatars[this.random += 1]
     },
     login () {
-      let nickName = this.nickName
+      let name = this.name
       let avatar = avatars[this.random]
       // 未输入名称时随机生成一个
-      if (nickName.replace(/\s+/g, '') === '' || nickName === 'null') {
-        this.nickName = nickName = `路人${Math.floor(Math.random() * 123 + Math.random() * 234)}`
+      if (name.replace(/\s+/g, '') === '' || name === 'null') {
+        this.name = name = `路人${Math.floor(Math.random() * 123 + Math.random() * 234)}`
       }
 
       // 发送登录消息
       let o = {}
       o.type = 'login_request'
-      o.nickName = nickName
+      o.time = new Date()
+      o.name = name
       o.avatar = avatar
 
       if (this.$websocket.ws && this.$websocket.ws.readyState === 1) {
@@ -150,7 +151,7 @@ export default {
       .el-main {
         margin-left: 0;
         border-radius: 0;
-        .message-pabel-box {
+        .message-panel-box {
           padding: 0 12px;
         }
         .message-styles-box {

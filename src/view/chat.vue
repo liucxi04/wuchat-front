@@ -14,11 +14,11 @@
 
       <el-main>
         <el-header height="40px">
-          <span class="title" v-if="content[nowSwitch].id == 'group'">聊天室({{lineCount}})人</span>
-          <span class="title" v-else>{{content[nowSwitch].nickName}}</span>
+          <span class="title" v-if="content[nowSwitch].id == 'group'">聊天室({{this.content.length - 1}})人</span>
+          <span class="title" v-else>{{content[nowSwitch].name}}</span>
         </el-header>
 
-        <message-pabel
+        <message-panel
           :content="content"
           :nowSwitchId="nowSwitchId"
           :localInfo="localInfo"
@@ -29,10 +29,6 @@
           :localInfo="localInfo"
           :nowSwitchId="nowSwitchId" />
       </el-main>
-
-      <footer class="footer">
-        <a href="https://xiaobaicai.fun/" target="_blank">WeiLin</a> &copy; 2020
-      </footer>
       <audio id="notify-audio" src="./static/wav/tim.wav"></audio>
     </el-container>
   </div>
@@ -40,23 +36,15 @@
 
 <script>
 import MessageGroup from '@/components/message-group'
-import MessagePabel from '@/components/message-pabel'
+import MessagePanel from '@/components/message-panel'
 import MessageInput from '@/components/message-input'
+import Bus from '@/assets/eventBus'
 export default {
   name: 'Chat',
+  components: { MessageGroup, MessagePanel, MessageInput },
   data () {
     return {
-      lineCount: 0,
-      content: [{
-        id: 0,
-        active: false,
-        nickName: '聊天室',
-        avatar: './static/avatar/group.png',
-        message: {
-          time: 1580572800000,
-          content: 'Welcome'
-        }
-      }],
+      content: [],
       nowSwitch: 0,
       nowSwitchId: 'group',
       localInfo: {}
@@ -64,16 +52,12 @@ export default {
   },
   mounted () {
     const params = this.$route.params
-
-    /**
-     * 判断是否通过路由跳转过来的
-     */
+    // 判断是否通过路由跳转过来的
     if (params.id) {
-      // 保存当前用户信息
       this.localInfo = {
         id: params.id,
         avatar: params.avatar,
-        nickName: params.nickName
+        name: params.name
       }
     } else {
       this.goBack()
@@ -87,49 +71,51 @@ export default {
 
     // 发送初始化消息
     let o = {}
-    o.type = 'chat_request'
+    o.type = 'chat_init_request'
+    o.time = new Date()
     if (this.$websocket.ws && this.$websocket.ws.readyState === 1) {
       this.$websocket.ws.send(JSON.stringify(o))
       console.log('send', JSON.stringify(o))
     }
-  },
-  methods: {
-    initChat (body) {
+
+    Bus.$on('initChat', body => {
       // 默认选中第一个
-      body.map(item => {
-        item.active = false
-      })
-      body[0].active = true
-      this.content = body
-      this.nowSwitchId = 'group'
-    },
+      console.log('initChat', body)
 
-    changeUser (res) {
-      let code = res.code
-      let body = res.body
-      let notify = code === 2 ? '欢迎:)' : ':)'
-      this.$notify({
-        title: '通知',
-        dangerouslyUseHTMLString: true,
-        message: `
-          <img class="notify-image" src="${body.avatar}">
-          <div class="notify-content">
-            <strong class="notify-title">${notify}</strong>
-            <span><strong> ${body.notify} </strong</span>
-          </div>
-        `
-      })
-
-      // 删除通知
-      delete body.notify
-      // 在线人数
-      this.lineCount = res.lineCount
+      for (const i in body) {
+        let info = {
+          id: body[i].id,
+          active: false,
+          name: body[i].name,
+          avatar: body[i].avatar,
+          message: {
+            newMessageCount: 0,
+            isNewMessage: false
+          }
+        }
+        this.content.push(info)
+      }
+      this.content[0].active = true
+    })
+    Bus.$on('changeUser', res => {
+      // TODO 通知
+      console.log('changeUser', res)
       // 添加联系人
-      if (code === 2) {
-        this.content.push(body)
+      if (res.code === '1') {
+        let info = {
+          id: res.id,
+          active: false,
+          name: res.name,
+          avatar: res.avatar,
+          message: {
+            newMessageCount: 0,
+            isNewMessage: false
+          }
+        }
+        this.content.push(info)
       } else {
         // 如果当前选择的人离开了就选中聊天室
-        if (body.id === this.nowSwitchId) {
+        if (res.id === this.nowSwitchId) {
           this.content[0].active = true
           this.nowSwitch = 0
           this.nowSwitchId = 'group'
@@ -138,82 +124,38 @@ export default {
         }
         // 删除联系人
         for (let i = 0; i < this.content.length; i++) {
-          if (body.id === this.content[i].id) {
+          if (res.id === this.content[i].id) {
             this.content.splice(i, 1)
           }
         }
       }
-    },
+    })
+    Bus.$on('message', res => {
+      this.content.map(item => {
+        if (item.id === res.to) {
+          item.message.newMessageCount += 1
+          item.message.isNewMessage = true
+        }
+      })
+    })
+  },
+  methods: {
     /**
      * 切换聊天对象
      */
     switchGroup (index, id) {
-      this.nowSwitchId = id
       this.nowSwitch = index
-
+      this.nowSwitchId = id
       // 隐藏小红点
       if (this.content[index].message.isNewMessage !== undefined) {
         this.content[index].message.isNewMessage = false
         this.content[index].message.newMessageCount = 0
       }
     },
-
-    /**
-     * 接收消息
-     */
-    message (respone) {
-      let type = respone.type
-      let body = respone.body
-      let content = this.content
-      let length = content.length
-      let id = body.gotoId
-      let notifyAudio = document.getElementById('notify-audio')
-
-      // 服务器返回的消息
-      if (type === 'server-message') {
-        if (respone.id === 'robots') {
-          id = 'robots'
-        }
-      }
-
-      // 更新小红点
-      if (this.nowSwitchId !== id) {
-        body.message.isNewMessage = true
-        body.message.newMessageCount = (() => {
-          for (var i = 0; i < length; i++) {
-            if (id === this.content[i].id) {
-              notifyAudio.play()
-              if (this.content[i].message.newMessageCount !== undefined) {
-                let count = this.content[i].message.newMessageCount += 1
-                return count
-              } else {
-                return 1
-              }
-            }
-          }
-        })()
-      }
-
-      // 更新联系人消息
-      for (let i = 0; i < length; i++) {
-        if (content[i].id === id) {
-          Object.assign(this.content[i].message, body.message)
-        }
-      }
-    },
-
-    /**
-     * 关闭
-     */
     goBack () {
       let href = window.location.href
       window.location.href = href.split('#')[0]
     }
-  },
-  components: {
-    MessageGroup,
-    MessagePabel,
-    MessageInput
   }
 }
 </script>

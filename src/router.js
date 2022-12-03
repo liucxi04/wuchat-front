@@ -6,16 +6,16 @@ import Chat from '@/view/chat'
 Vue.use(Router)
 
 export default new Router({
-    routes: [
-        {
-            path: '/',
-            name: 'Index',
-            component: Index
-        },
-        {
-            path: '/chat',
-            name: 'Chat',
-            component: Chat
-        }
-    ]
+  routes: [
+    {
+      path: '/',
+      name: 'Index',
+      component: Index
+    },
+    {
+      path: '/chat',
+      name: 'Chat',
+      component: Chat
+    }
+  ]
 })

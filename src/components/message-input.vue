@@ -2,30 +2,26 @@
   <div class="message-input-box">
 
     <el-input
-      type="textarea"
-      resize="none"
+      type="textarea" resize="none"
       :autosize="{ minRows: 3, maxRows: 3}"
-      v-model="textArea"
-      v-on:keyup.native="keyUp">
+      v-model="textArea" v-on:keyup.native="keyUp">
     </el-input>
 
     <div class="footer-tools">
-      <el-button
-        size="mini"
-        type="primary"
-        @click="sendMessage"
-        class="send-button">
-        发送/Send
+      <el-button size="mini" type="primary" @click="sendMessage" class="send-button">
+        发送
       </el-button>
     </div>
   </div>
 </template>
 
 <script>
+
 import Bus from '@/assets/eventBus'
 import { gotoBottom } from '@/assets/tools'
 
 export default {
+  name: 'MessageInput',
   data () {
     return {
       textArea: '',
@@ -34,17 +30,11 @@ export default {
   },
   props: {
     // 联系人列表
-    content: {
-      type: Array
-    },
+    content: { type: Array },
     // 当前选择的ID
-    nowSwitchId: {
-      type: String
-    },
+    nowSwitchId: { type: String },
     // 当前用户
-    localInfo: {
-      type: Object
-    }
+    localInfo: { type: Object }
   },
   methods: {
     /**
@@ -52,11 +42,9 @@ export default {
      */
     nowSwitchType () {
       if (this.nowSwitchId === 'group') {
-        return 'group-message'
-      } else if (this.nowSwitchId === 'robots') {
-        return 'robots-message'
+        return 'group_chat_request'
       } else {
-        return 'user-message'
+        return 'single_chat_request'
       }
     },
 
@@ -94,27 +82,17 @@ export default {
      */
     sendMessage () {
       let message = {
-        // 类型
+        // 消息类型
         type: this.nowSwitchType(),
+        // 收者ID
+        to: this.nowSwitchId,
         // 发送者ID
-        id: this.localInfo.id,
-        body: {
-          // 消息类型
-          type: 'user-message',
-          // 收者ID
-          gotoId: this.nowSwitchId,
-          // 发送者ID
-          fromId: this.localInfo.id,
-          // 发送者头像
-          avatar: this.localInfo.avatar,
-          // 发送者昵称
-          nickName: this.localInfo.nickName,
-          message: {
-            // 发送时间
-            time: +new Date(),
-            // 聊天内容
-            content: this.textAreaTran()
-          }
+        from: this.localInfo.id,
+        message: {
+          // 发送时间
+          time: new Date(),
+          // 聊天内容
+          content: this.textAreaTran()
         }
       }
       if (this.blankTesting()) {
@@ -171,7 +149,7 @@ export default {
     }
   }
 }
-.face-pabel {
+.face-panel {
   .face {
     display: inline-block;
     width: 20px;

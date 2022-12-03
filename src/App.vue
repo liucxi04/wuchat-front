@@ -5,6 +5,7 @@
 </template>
 
 <script>
+import Bus from '@/assets/eventBus'
 export default {
   name: 'App',
   methods: {
@@ -13,40 +14,32 @@ export default {
       let that = this
       if ('WebSocket' in window) {
         console.log('您的浏览器支持 WebSocket!')
-
-        that.ws = new WebSocket(`ws://192.168.179.131:8072/sylar/chat`)
+        that.ws = new WebSocket(`ws://101.43.140.129:12345/chat`)
         that.$websocket.setWs(that.ws)
-        console.log('that.$websocket.ws', that.$websocket.ws)
+
         that.ws.onopen = function () {
           console.log('连接...')
         }
+
         that.ws.onmessage = function (res) {
           let data = JSON.parse(res.data)
           console.log('data', data)
-          if (data.result !== '200') {
-            that.$alert(res.msg, '提示', {
-              confirmButtonText: '确定'
+          if (data.type === 'login_response') {
+            that.$router.push({
+              name: 'Chat',
+              params: {
+                id: data.id,
+                avatar: data.avatar,
+                name: data.name
+              }
             })
-          } else {
-            if (data.type === 'login_response') {
-              that.$router.push({
-                name: 'Chat',
-                params: {
-                  id: data.id,
-                  avatar: data.avatar,
-                  nickName: data.nickName
-                }
-              })
-            }
-            if (data.type === 'chat_response') {
-              this.initChat(data.body)
-            } else if (data.type === 'user_change') {
-              this.changeUser(res)
-            } else if (data.type === 'msg') {
-              this.handleMessage(res)
-            } else if (data.type === 'more_msg') {
-              this.handleMoreMessage(res)
-            }
+          }
+          if (data.type === 'chat_init_response') {
+            Bus.$emit('initChat', data.data)
+          } else if (data.type === 'user_change_response') {
+            Bus.$emit('changeUser', data)
+          } else if (data.type === 'chat_response') {
+            Bus.$emit('MESSAGE', data)
           }
         }
         that.ws.onclose = function () {
