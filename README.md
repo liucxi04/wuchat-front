@@ -13,20 +13,22 @@
  包含以下功能：
   - 登陆
   
-  ![登陆](https://github.com/liucxi04/wuchat-front/tree/main/picture/login.png)
+  [![VCAhA.png](https://i.328888.xyz/img/2022/12/04/VCAhA.png)](https://imgloc.com/i/VCAhA)
   
   - 群聊
   
-  ![群聊](https://github.com/liucxi04/wuchat-front/tree/main/picture/group.png)
+  [![VC4Nc.png](https://i.328888.xyz/img/2022/12/04/VC4Nc.png)](https://imgloc.com/i/VC4Nc)
   
   - 私聊
   
-  ![私聊](https://github.com/liucxi04/wuchat-front/tree/main/picture/single.png)
+  [![VCDuo.png](https://i.328888.xyz/img/2022/12/04/VCDuo.png)](https://imgloc.com/i/VCDuo)
   
   - 未读消息显示
   
-  ![未读消息显示](https://github.com/liucxi04/wuchat-front/tree/main/picture/unread.png)
+  [![VCnHN.png](https://i.328888.xyz/img/2022/12/04/VCnHN.png)](https://imgloc.com/i/VCnHN)
   
+ 图片如失效请自行查看 picture 内图片
+ 
  ##  项目运行
  ```shell
  git clone git@github.com:liucxi04/wuchat-front.git
