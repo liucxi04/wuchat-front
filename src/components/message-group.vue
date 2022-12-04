@@ -1,12 +1,11 @@
 <template>
   <ul class="message-item">
-    <li
-      v-for="(item, index) in content" :key="index" @click="switchGroup(index, item.id)"
+    <li v-for="(item, index) in content" :key="index" @click="switchGroup(index, item.id)"
       :class="['message-list', {'message-active': item.active}]">
 
       <div class="message-left">
         <el-badge class="item" :max="99"
-          :value="item.message.newMessageCount" :hidden="!item.message.isNewMessage">
+          :value="item.newMessageCount" :hidden="!item.isNewMessage">
           <img class="message-avatar" :src="item.avatar">
         </el-badge>
       </div>
@@ -25,9 +24,7 @@ import { gotoBottom } from '@/assets/tools'
 
 export default {
   name: 'MessageGroup',
-  props: {
-    content: { type: Array }
-  },
+  props: { content: { type: Array } },
   data () {
     return {
       gotoBottom: gotoBottom
@@ -38,16 +35,12 @@ export default {
      * 切换联系对象
      */
     switchGroup (index, id) {
-      let content = this.content
-      // 隐藏所有
-      content.map(item => {
+      this.content.map(item => {
         item.active = false
       })
       this.gotoBottom()
-      // 显示当前点击的
-      content[index].active = true
+      this.content[index].active = true
       this.$forceUpdate()
-      // 传递给父级
       this.$emit('switchGroup', index, id)
     }
   }

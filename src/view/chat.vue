@@ -7,29 +7,27 @@
           <span class="title">联系人</span>
         </el-header>
 
-        <message-group
-          :content="content"
-          @switchGroup="switchGroup" />
+        <message-group :content="content"
+        @switchGroup="switchGroup"/>
       </el-aside>
 
       <el-main>
         <el-header height="40px">
-          <span class="title" v-if="content[nowSwitch].id == 'group'">聊天室({{this.content.length - 1}})人</span>
-          <span class="title" v-else>{{content[nowSwitch].name}}</span>
+          <span class="title" v-if="nowSwitchId === 'group'">聊天室 ({{content.length}}) 人</span>
+          <span class="title" v-else>{{content[nowSwitchIndex].name}}</span>
         </el-header>
 
         <message-panel
           :content="content"
-          :nowSwitchId="nowSwitchId"
           :localInfo="localInfo"
-          @message="message" />
+          :nowSwitchId="nowSwitchId"
+          @message="message"/>
 
         <message-input
           :content="content"
           :localInfo="localInfo"
           :nowSwitchId="nowSwitchId" />
       </el-main>
-      <audio id="notify-audio" src="./static/wav/tim.wav"></audio>
     </el-container>
   </div>
 </template>
@@ -44,8 +42,15 @@ export default {
   components: { MessageGroup, MessagePanel, MessageInput },
   data () {
     return {
-      content: [],
-      nowSwitch: 0,
+      content: [{
+        id: 'group',
+        name: '聊天室',
+        avatar: './static/avatar/group.png',
+        newMessageCount: 0,
+        isNewMessage: false,
+        active: true
+      }],
+      nowSwitchIndex: 0,
       nowSwitchId: 'group',
       localInfo: {}
     }
@@ -62,44 +67,31 @@ export default {
     } else {
       this.goBack()
     }
-
-    // 历史返回重新登陆
-    if (window.history && window.history.pushState) {
-      history.pushState(null, null, document.URL)
-      window.addEventListener('popstate', this.goBack, false)
-    }
-
     // 发送初始化消息
     let o = {}
     o.type = 'chat_init_request'
-    o.time = new Date()
+    o.time = new Date().getTime().toString()
     if (this.$websocket.ws && this.$websocket.ws.readyState === 1) {
       this.$websocket.ws.send(JSON.stringify(o))
-      console.log('send', JSON.stringify(o))
     }
-
     Bus.$on('initChat', body => {
-      // 默认选中第一个
-      console.log('initChat', body)
-
+      // 保存所有用户信息
       for (const i in body) {
+        if (body[i].id === this.localInfo.id) {
+          continue
+        }
         let info = {
           id: body[i].id,
           active: false,
           name: body[i].name,
           avatar: body[i].avatar,
-          message: {
-            newMessageCount: 0,
-            isNewMessage: false
-          }
+          newMessageCount: 0,
+          isNewMessage: false
         }
         this.content.push(info)
       }
-      this.content[0].active = true
     })
     Bus.$on('changeUser', res => {
-      // TODO 通知
-      console.log('changeUser', res)
       // 添加联系人
       if (res.code === '1') {
         let info = {
@@ -107,18 +99,15 @@ export default {
           active: false,
           name: res.name,
           avatar: res.avatar,
-          message: {
-            newMessageCount: 0,
-            isNewMessage: false
-          }
+          newMessageCount: 0,
+          isNewMessage: false
         }
         this.content.push(info)
       } else {
         // 如果当前选择的人离开了就选中聊天室
-        if (res.id === this.nowSwitchId) {
+        if (res.id === this.content[this.nowSwitch]) {
           this.content[0].active = true
           this.nowSwitch = 0
-          this.nowSwitchId = 'group'
           this.content[0].message.newMessageCount = 0
           this.content[0].message.isNewMessage = false
         }
@@ -130,27 +119,30 @@ export default {
         }
       }
     })
-    Bus.$on('message', res => {
-      this.content.map(item => {
-        if (item.id === res.to) {
-          item.message.newMessageCount += 1
-          item.message.isNewMessage = true
-        }
-      })
-    })
   },
   methods: {
-    /**
-     * 切换聊天对象
-     */
     switchGroup (index, id) {
-      this.nowSwitch = index
+      // 传递给父级
+      this.nowSwitchIndex = index
       this.nowSwitchId = id
       // 隐藏小红点
-      if (this.content[index].message.isNewMessage !== undefined) {
-        this.content[index].message.isNewMessage = false
-        this.content[index].message.newMessageCount = 0
+      if (this.content[index].isNewMessage !== undefined) {
+        this.content[index].isNewMessage = false
+        this.content[index].newMessageCount = 0
       }
+    },
+    message (res) {
+      let fromId = res.from
+      if (res.to === 'group') {
+        fromId = 'group'
+      }
+      this.content.map(item => {
+        if (item.id === fromId && this.nowSwitchId !== fromId) {
+          item.newMessageCount += 1
+          item.isNewMessage = true
+        }
+      })
+      this.$forceUpdate()
     },
     goBack () {
       let href = window.location.href

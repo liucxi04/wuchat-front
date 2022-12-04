@@ -4,15 +4,11 @@
       <li
         v-for="(item, index) in messageTemplate()"
         :key="index"
-        :class="judgeClass(item.type)">
-
-        <img class="message-avatar"
-          :src="item.avatar ? item.avatar : './static/avatar/avatar_14.jpg'"
-          :alt="item.name ? item.name : '我是憨批'">
-
-        <p class="message-nickname" v-if="item.type === 'server'">{{item.name}} {{item.message.time}}</p>
-        <p class="message-nickname" v-else>{{item.message.time}} {{item.name}}</p>
-        <p class="message-classic" v-html="item.message.content"></p>
+        :class="judgeClass(item.server)">
+        <img class="message-avatar" :src="item.avatar" :alt="item.name">
+        <p class="message-nickname" v-if="item.server === 'server'">{{item.name}} {{transformationTime(item.time)}}</p>
+        <p class="message-nickname" v-else>{{transformationTime(item.time)}} {{item.name}}</p>
+        <p class="message-classic" v-html="item.content"></p>
       </li>
     </ul>
   </div>
@@ -40,34 +36,35 @@ export default {
     }
   },
   mounted () {
-    /**
-     * 当前用户发的消息
-     */
-    Bus.$on('MESSAGE', response => {
-      let gotoId = response.to
+    Bus.$on('handleMessage', response => {
       let fromId = response.from
-
+      let gotoId = response.to
       this.initMessageArray(gotoId, fromId)
-      this.message[gotoId].push(response)
+      if (response.server === 'server') {
+        if (gotoId === 'group') {
+          this.message['group'].push(response)
+        } else {
+          this.message[fromId].push(response)
+        }
+      } else {
+        this.message[gotoId].push(response)
+      }
       this.$forceUpdate()
       // 把消息传给父级
-      this.$emit('message', response)
+      if (response.server === 'server') {
+        this.$emit('message', response)
+      }
     })
   },
   methods: {
-    /**
-     * 数组初始化
-     */
     initMessageArray (gotoId, fromId) {
       let array = this.message
-
       if (!gotoId) {
         return
       }
       if (!array[gotoId]) {
         this.message[gotoId] = []
       }
-
       if (!fromId) {
         return
       }
@@ -75,10 +72,6 @@ export default {
         this.message[fromId] = []
       }
     },
-
-    /**
-     * 判断Class
-     */
     judgeClass (type) {
       if (type === 'server') {
         return 'message-layout-left'
@@ -86,12 +79,24 @@ export default {
         return 'message-layout-right'
       }
     },
-
-    /**
-     * 返回聊天记录集合
-     */
     messageTemplate () {
       return this.message[this.nowSwitchId]
+    },
+    transformationTime (inputTime) {
+      inputTime = inputTime.substr(0, 10)
+      var date = new Date(inputTime * 1000)
+      var y = date.getFullYear()
+      var m = date.getMonth() + 1
+      m = m < 10 ? ('0' + m) : m
+      var d = date.getDate()
+      d = d < 10 ? ('0' + d) : d
+      var h = date.getHours()
+      h = h < 10 ? ('0' + h) : h
+      var minute = date.getMinutes()
+      var second = date.getSeconds()
+      minute = minute < 10 ? ('0' + minute) : minute
+      second = second < 10 ? ('0' + second) : second
+      return y + '-' + m + '-' + d + ' ' + ' ' + h + ':' + minute + ':' + second
     }
   }
 }

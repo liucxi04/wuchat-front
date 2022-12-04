@@ -1,10 +1,8 @@
 <template>
   <div class="message-input-box">
 
-    <el-input
-      type="textarea" resize="none"
-      :autosize="{ minRows: 3, maxRows: 3}"
-      v-model="textArea" v-on:keyup.native="keyUp">
+    <el-input type="textarea" resize="none"
+      :autosize="{ minRows: 3, maxRows: 3}" v-model="textArea">
     </el-input>
 
     <div class="footer-tools">
@@ -31,83 +29,43 @@ export default {
   props: {
     // 联系人列表
     content: { type: Array },
-    // 当前选择的ID
+    // 当前联系人
     nowSwitchId: { type: String },
     // 当前用户
     localInfo: { type: Object }
   },
   methods: {
     /**
-     * 消息类型
-     */
-    nowSwitchType () {
-      if (this.nowSwitchId === 'group') {
-        return 'group_chat_request'
-      } else {
-        return 'single_chat_request'
-      }
-    },
-
-    /**
-     * 消息过滤
-     */
-    textAreaTran () {
-      return this.textArea.replace(/\n/g, '').replace(new RegExp('<', 'gm'), '&lt')
-    },
-
-    /**
-     * 检测空白
-     */
-    blankTesting () {
-      if (this.textArea.replace(/\s+/g, '') === '') {
-        this.$alert('不能发送空白消息', '提示', {
-          confirmButtonText: '确定'
-        })
-        return false
-      }
-      return true
-    },
-
-    /**
-     * 按Enter发送消息
-     */
-    keyUp (event) {
-      if (event.key === 'Enter') {
-        this.sendMessage()
-      }
-    },
-
-    /**
      * 发送消息
      */
     sendMessage () {
       let message = {
         // 消息类型
-        type: this.nowSwitchType(),
-        // 收者ID
-        to: this.nowSwitchId,
+        type: 'chat_request',
+        // 服务端消息还是客户端消息
+        server: 'client',
+        // 发送时间
+        time: new Date().getTime().toString(),
         // 发送者ID
         from: this.localInfo.id,
-        message: {
-          // 发送时间
-          time: new Date(),
-          // 聊天内容
-          content: this.textAreaTran()
-        }
+        name: this.localInfo.name,
+        avatar: this.localInfo.avatar,
+        // 收者ID
+        to: this.nowSwitchId,
+        // 聊天内容
+        content: this.textArea
       }
-      if (this.blankTesting()) {
-        // 发送服务器
-        if (this.$websocket.ws && this.$websocket.ws.readyState === 1) {
-          this.$websocket.ws.send(JSON.stringify(message))
-          console.log('send', JSON.stringify(message))
-        }
-        // 传递至同级
-        Bus.$emit('MESSAGE', message)
-        // 消息清空
-        this.textArea = ''
-        // 消息置底
-        this.gotoBottom()
+      // 发送服务器
+      if (this.$websocket.ws && this.$websocket.ws.readyState === 1) {
+        this.$websocket.ws.send(JSON.stringify(message))
+        console.log('send', JSON.stringify(message))
       }
+      // 传递至同级
+      Bus.$emit('handleMessage', message)
+      // 消息清空
+      this.textArea = ''
+      // 消息置底
+      this.gotoBottom()
     }
   }
 }

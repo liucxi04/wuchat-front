@@ -39,7 +39,7 @@ export default {
           } else if (data.type === 'user_change_response') {
             Bus.$emit('changeUser', data)
           } else if (data.type === 'chat_response') {
-            Bus.$emit('MESSAGE', data)
+            Bus.$emit('handleMessage', data)
           }
         }
         that.ws.onclose = function () {
